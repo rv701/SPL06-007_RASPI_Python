@@ -143,6 +143,55 @@ def get_temperature_scale_factor():
 
   return k
 
+def get_praw():
+  tmp_MSB = bus.read_byte_data(i2c_address, 0x00)
+  tmp_LSB = bus.read_byte_data(i2c_address, 0x01)
+  tmp_XLSB = bus.read_byte_data(i2c_address, 0x02)
+
+  tmp = np.uint32(tmp_MSB << 16) | np.uint32(tmp_LSB << 8) | np.uint32(tmp_XLSB)
+
+  if(tmp & (1 << 23)):
+    tmp = tmp | 0XFF000000
+
+  return np.int32(tmp)
+
+
+def get_pressure_scale_factor():
+  tmp_Byte = bus.read_byte_data(i2c_address, 0x06)
+
+  tmp_Byte = tmp_Byte & 0B111
+
+  if(tmp_Byte == 0B000):
+    k = 524288.0
+
+  if(tmp_Byte == 0B001):
+    k = 1572864.0
+
+  if(tmp_Byte == 0B010):
+    k = 3670016.0
+
+  if(tmp_Byte == 0B011):
+    k = 7864320.0
+
+  if(tmp_Byte == 0B100):
+    k = 253952.0
+
+  if(tmp_Byte == 0B101):
+    k = 516096.0
+
+  if(tmp_Byte == 0B110):
+    k = 1040384.0
+
+  if(tmp_Byte == 0B111):
+    k = 2088960.0
+
+  return k
+
+def get_altitude(pressure, pressure_sealevel):
+  pressure /= 100
+  altitude = 44330 * (1.0 - pow((pressure / pressure_sealevel), 0.1903))
+  return altitude
+  
 
 
 # Initialize I2C (SMBus)
@@ -227,4 +276,21 @@ temp_f = (temp_c * 9/5) + 32
 print "temp_c:", "{:.1f}".format(temp_c), "C"
 print "temp_f:", "{:.1f}".format(temp_f), "F"
 
+praw = get_praw()
+print "praw:", praw
+
+p_scale = get_pressure_scale_factor()
+print "p_scale:", p_scale
+
+praw_sc = praw / p_scale
+print "p_scale", "{:.3f}".format(praw_sc)
+
+pcomp = c00+ praw_sc*(c10+ praw_sc*(c20+ praw_sc*c30)) + traw_sc*c01 + traw_sc*praw_sc*(c11+praw_sc*c21)
+print "pcomp", "{:.2f}".format(pcomp)
+
+altitude = get_altitude(pcomp, 1009.7)
+print "altitude:",  "{:.1f}".format(altitude), "m"
+
+altitude_f = altitude * 3.281
+print "altitude",  "{:.1f}".format(altitude_f), "ft"
 
