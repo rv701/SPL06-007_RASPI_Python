@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import time
 import smbus
 import numpy as np
@@ -30,6 +32,116 @@ def get_c1():
 
   return np.int16(tmp)
 
+def get_c00():
+  tmp_MSB = bus.read_byte_data(i2c_address, 0x13)
+  tmp_LSB = bus.read_byte_data(i2c_address, 0x14)
+  tmp_XLSB = bus.read_byte_data(i2c_address, 0x15)
+
+  tmp = np.uint32(tmp_MSB << 12) | np.uint32(tmp_LSB << 4) | np.uint32(tmp_XLSB >> 4)
+
+  if(tmp & (1 << 19)):
+    tmp = tmp | 0XFFF00000
+  
+  return np.int32(tmp)
+
+def get_c10():
+  tmp_MSB = bus.read_byte_data(i2c_address, 0x15)
+  tmp_LSB = bus.read_byte_data(i2c_address, 0x16)
+  tmp_XLSB = bus.read_byte_data(i2c_address, 0x17)
+
+  tmp_MSB = tmp_MSB & 0xF
+
+  #tmp = tmp_MSB << 8 | tmp_LSB
+  #tmp = tmp << 8
+  tmp = np.uint32(tmp_MSB << 16) | np.uint32(tmp_LSB << 8) | np.uint32(tmp_XLSB)
+
+  if(tmp & (1 << 19)):
+    tmp = tmp | 0XFFF00000
+
+  return np.int32(tmp)
+
+def get_c01():
+  tmp_MSB = bus.read_byte_data(i2c_address, 0x18)
+  tmp_LSB = bus.read_byte_data(i2c_address, 0x19)
+
+  tmp = (tmp_MSB << 8) | tmp_LSB
+
+  return np.int16(tmp)
+
+def get_c11():
+  tmp_MSB = bus.read_byte_data(i2c_address, 0x1A)
+  tmp_LSB = bus.read_byte_data(i2c_address, 0x1B)
+
+  tmp = (tmp_MSB << 8) | tmp_LSB
+
+  return np.int16(tmp)
+
+def get_c20():
+  tmp_MSB = bus.read_byte_data(i2c_address, 0x1C)
+  tmp_LSB = bus.read_byte_data(i2c_address, 0x1D)
+
+  tmp = (tmp_MSB << 8) | tmp_LSB
+
+  return np.int16(tmp)
+
+def get_c21():
+  tmp_MSB = bus.read_byte_data(i2c_address, 0x1E)
+  tmp_LSB = bus.read_byte_data(i2c_address, 0x1F)
+
+  tmp = (tmp_MSB << 8) | tmp_LSB
+
+  return np.int16(tmp)
+
+def get_c30():
+  tmp_MSB = bus.read_byte_data(i2c_address, 0x20)
+  tmp_LSB = bus.read_byte_data(i2c_address, 0x21)
+
+  tmp = (tmp_MSB << 8) | tmp_LSB
+
+  return np.int16(tmp)
+
+def get_traw():
+  tmp_MSB = bus.read_byte_data(i2c_address, 0x03)
+  tmp_LSB = bus.read_byte_data(i2c_address, 0x04)
+  tmp_XLSB = bus.read_byte_data(i2c_address, 0x05)
+
+  tmp = np.uint32(tmp_MSB << 16) | np.uint32(tmp_LSB << 8) | np.uint32(tmp_XLSB)
+
+  if(tmp & (1 << 23)):
+    tmp = tmp | 0XFF000000
+
+  return np.int32(tmp)
+
+def get_temperature_scale_factor():
+  tmp_Byte = bus.read_byte_data(i2c_address, 0x07)
+
+  tmp_Byte = (tmp_Byte >> 4) & 0B111
+
+  if(tmp_Byte == 0B000):
+    k = 524288.0
+
+  if(tmp_Byte == 0B001):
+    k = 1572864.0
+
+  if(tmp_Byte == 0B010):
+    k = 3670016.0
+
+  if(tmp_Byte == 0B011):
+    k = 7864320.0
+
+  if(tmp_Byte == 0B100):
+    k = 253952.0
+
+  if(tmp_Byte == 0B101):
+    k = 516096.0
+
+  if(tmp_Byte == 0B110):
+    k = 1040384.0
+
+  if(tmp_Byte == 0B111):
+    k = 2088960.0 
+
+  return k
 
 
 
@@ -73,6 +185,46 @@ print "INT_STS:", bin(var)
 var = bus.read_byte_data(i2c_address, 0x0B)
 print "FIFO_STS:", bin(var)
 
-print "c0:", get_c0()
+c0 = get_c0()
+print "c0:", c0
 
-print "c1:", get_c1()
+c1 = get_c1()
+print "c1:", c1
+
+c00 = get_c00()
+print "c00:", c00
+
+c10 = get_c10()
+print "c10:", c10
+
+c01 = get_c01()
+print "c01:", c01
+
+c11 = get_c11()
+print "c11:", c11
+
+c20 = get_c20()
+print "c20:", c20
+
+c21 = get_c21()
+print "c21:", c21
+
+c30 = get_c30()
+print "c30:", c30
+
+traw = get_traw()
+print "traw:", traw
+
+t_scale = get_temperature_scale_factor()
+print "t_scale:", t_scale
+
+traw_sc = traw / t_scale
+print "traw_sc:", "{:.3f}".format(traw_sc)
+
+temp_c = ((c0) * 0.5) + ((c1) * traw_sc)
+temp_f = (temp_c * 9/5) + 32
+
+print "temp_c:", "{:.1f}".format(temp_c), "C"
+print "temp_f:", "{:.1f}".format(temp_f), "F"
+
+
