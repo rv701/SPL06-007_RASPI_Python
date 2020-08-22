@@ -115,7 +115,7 @@ def get_traw():
 def get_temperature_scale_factor():
   tmp_Byte = bus.read_byte_data(i2c_address, 0x07)
 
-  tmp_Byte = (tmp_Byte >> 4) & 0B111
+  tmp_Byte = tmp_Byte & 0B111
 
   if(tmp_Byte == 0B000):
     k = 524288.0
@@ -198,10 +198,10 @@ def get_altitude(pressure, pressure_sealevel):
 bus = smbus.SMBus(i2c_ch)
 
 # Set pressure configuration register
-bus.write_byte_data(i2c_address, 0x06, 0x03)
+bus.write_byte_data(i2c_address, 0x06, 0x03) # pressure 8x oversampling
 
 # Set temperature configuration register
-bus.write_byte_data(i2c_address, 0x07, 0x80)
+bus.write_byte_data(i2c_address, 0x07, 0x83) # temperature 8x oversampling
 
 # Set measurement register
 bus.write_byte_data(i2c_address, 0x08, 0x07)
