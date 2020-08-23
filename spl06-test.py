@@ -273,8 +273,8 @@ print "traw_sc:", "{:.3f}".format(traw_sc)
 temp_c = ((c0) * 0.5) + ((c1) * traw_sc)
 temp_f = (temp_c * 9/5) + 32
 
-print "temp_c:", "{:.1f}".format(temp_c), "C"
-print "temp_f:", "{:.1f}".format(temp_f), "F"
+print "temp_c:", "{:.1f}".format(temp_c), " C"
+print "temp_f:", "{:.1f}".format(temp_f), " F"
 
 praw = get_praw()
 print "praw:", praw
@@ -288,9 +288,14 @@ print "p_scale", "{:.3f}".format(praw_sc)
 pcomp = c00+ praw_sc*(c10+ praw_sc*(c20+ praw_sc*c30)) + traw_sc*c01 + traw_sc*praw_sc*(c11+praw_sc*c21)
 print "pcomp", "{:.2f}".format(pcomp)
 
-altitude = get_altitude(pcomp, 1009.7)
-print "altitude:",  "{:.1f}".format(altitude), "m"
+print "Measured Air Pressure: ", "{:.2f}".format(pcomp/100), " mb"
+
+local_sealevel = 1011.3
+print "Local Airport Sea Level Pressure: ", local_sealevel
+
+altitude = get_altitude(pcomp, local_sealevel)
+print "altitude:",  "{:.1f}".format(altitude), " m"
 
 altitude_f = altitude * 3.281
-print "altitude",  "{:.1f}".format(altitude_f), "ft"
+print "altitude",  "{:.1f}".format(altitude_f), " ft"
 
